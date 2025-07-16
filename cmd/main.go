@@ -5,12 +5,14 @@ import (
 	"log/slog"
 	"os"
 
+	"semantic-search/api"
 	embed "semantic-search/internal"
 	"semantic-search/internal/repository"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	_ "github.com/joho/godotenv/autoload"
+	"github.com/labstack/echo/v4"
 	"github.com/lmittmann/tint"
-	"github.com/pgvector/pgvector-go"
 )
 
 func main() {
@@ -31,31 +33,27 @@ func main() {
 	defer dbpool.Close()
 	logger.Info("Connected to database")
 
-	queries := repository.New(dbpool)
-
 	embedder, err := embed.NewGeminiEmbedder(ctx, logger)
 	if err != nil {
 		logger.Error("Failed to initialize embedder", "error", err)
 		return
 	}
 
-	text := "The Three-Body Problem is a hard sci-fi novel exploring first contact and cosmic civilizations."
-	vector, err := embedder.Embed(ctx, text)
-	if err != nil {
-		logger.Error("Failed to get embedding", "error", err)
-		return
+	repo := repository.New(dbpool)
+	apiHandler := &api.API{
+		Embedder:   embedder,
+		Repository: repo,
 	}
-	logger.Info("Got embedding", "length", len(vector))
 
-	err = queries.InsertBook(ctx, repository.InsertBookParams{
-		Title:       "The Three-Body Problem",
-		Description: text,
-		Embedding:   pgvector.NewVector(vector),
+	e := echo.New()
+
+	// Health check
+	e.GET("/ping", func(c echo.Context) error {
+		return c.String(200, "pong")
 	})
-	if err != nil {
-		logger.Error("Failed to insert book into DB", "error", err)
-		return
-	}
 
-	logger.Info("Book inserted successfully")
+	e.GET("/search", apiHandler.SearchBookHandler)
+	e.POST("/books", apiHandler.AddBookHandler)
+
+	e.Logger.Fatal(e.Start(":8080"))
 }
