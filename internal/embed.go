@@ -39,7 +39,7 @@ func NewGeminiEmbedder(ctx context.Context, logger *slog.Logger) (*GeminiEmbedde
 }
 
 func (g *GeminiEmbedder) Embed(ctx context.Context, input string) ([]float32, error) {
-	dim := int32(738)
+	dim := int32(768)
 	contents := []*genai.Content{
 		genai.NewContentFromText(input, genai.RoleUser),
 	}
