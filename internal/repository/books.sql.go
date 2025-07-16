@@ -28,28 +28,27 @@ func (q *Queries) InsertBook(ctx context.Context, arg InsertBookParams) error {
 }
 
 const searchBooks = `-- name: SearchBooks :many
-SELECT id, title, description
+SELECT id, title, description, embedding
 FROM books
 ORDER BY embedding <=> $1
 LIMIT 5
 `
 
-type SearchBooksRow struct {
-	ID          int32
-	Title       string
-	Description string
-}
-
-func (q *Queries) SearchBooks(ctx context.Context, embedding pgvector.Vector) ([]SearchBooksRow, error) {
+func (q *Queries) SearchBooks(ctx context.Context, embedding pgvector.Vector) ([]Book, error) {
 	rows, err := q.db.Query(ctx, searchBooks, embedding)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []SearchBooksRow
+	var items []Book
 	for rows.Next() {
-		var i SearchBooksRow
-		if err := rows.Scan(&i.ID, &i.Title, &i.Description); err != nil {
+		var i Book
+		if err := rows.Scan(
+			&i.ID,
+			&i.Title,
+			&i.Description,
+			&i.Embedding,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

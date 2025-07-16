@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"math"
 	"net/http"
 	"semantic-search/internal"
 	"semantic-search/internal/repository"
@@ -47,24 +48,61 @@ func (a *API) AddBookHandler(c echo.Context) error {
 	return c.JSON(http.StatusCreated, echo.Map{"status": "book added"})
 }
 
+func cosineSimilarity(a, b []float32) (float64, error) {
+	if len(a) != len(b) {
+		return 0, fmt.Errorf("vectors must be same length")
+	}
+	var dot, normA, normB float64
+	for i := range a {
+		dot += float64(a[i] * b[i])
+		normA += float64(a[i] * a[i])
+		normB += float64(b[i] * b[i])
+	}
+	if normA == 0 || normB == 0 {
+		return 0, fmt.Errorf("zero vector")
+	}
+	return dot / (math.Sqrt(normA) * math.Sqrt(normB)), nil
+}
+
+type BookWithSimilarity struct {
+	ID          int32   `json:"id"`
+	Title       string  `json:"title"`
+	Description string  `json:"description"`
+	Similarity  float64 `json:"similarity"`
+}
+
 func (a *API) SearchBookHandler(c echo.Context) error {
 	query := c.QueryParam("q")
-	fmt.Println(query)
 	if query == "" {
 		return c.JSON(http.StatusBadRequest, echo.Map{"error": "missing query"})
 	}
 
-	vector, err := a.Embedder.Embed(c.Request().Context(), query)
+	ctx := c.Request().Context()
+	queryVector, err := a.Embedder.Embed(ctx, query)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "embedding field"})
+		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "embedding failed"})
 	}
 
-	results, err := a.Repository.SearchBooks(c.Request().Context(), pgvector.NewVector(vector))
+	results, err := a.Repository.SearchBooks(ctx, pgvector.NewVector(queryVector))
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "search failed"})
 	}
 
-	return c.JSON(http.StatusOK, results)
+	var resp []BookWithSimilarity
+	for _, book := range results {
+		sim, err := cosineSimilarity(queryVector, book.Embedding.Slice())
+		if err != nil {
+			sim = 0
+		}
+		resp = append(resp, BookWithSimilarity{
+			ID:          book.ID,
+			Title:       book.Title,
+			Description: book.Description,
+			Similarity:  sim,
+		})
+	}
+
+	return c.JSON(http.StatusOK, resp)
 }
 
 // TODO: add redis cache
