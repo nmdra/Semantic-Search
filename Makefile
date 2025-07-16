@@ -7,6 +7,9 @@ migrate-up:
 migrate-down:
 	migrate -database "$(DB_URL)" -path $(MIGRATIONS_DIR) down
 
+migrate-force:
+	migrate -database "$(DB_URL)" -path $(MIGRATIONS_DIR) force 1
+
 sqlc-gen:
 	sqlc generate
 

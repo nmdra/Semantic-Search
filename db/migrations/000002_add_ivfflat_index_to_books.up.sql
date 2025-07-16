@@ -1,10 +1,10 @@
 CREATE EXTENSION IF NOT EXISTS vector;
 
 CREATE TABLE books (
-    id SERIAL PRIMARY KEY,
-    title TEXT NOT NULL,
-    description TEXT NOT NULL,
-    embedding VECTOR(738)
+  id SERIAL PRIMARY KEY,
+  title TEXT NOT NULL,
+  description TEXT NOT NULL,
+  embedding VECTOR(768)
 );
 
 CREATE INDEX IF NOT EXISTS idx_books_embedding
