@@ -4,7 +4,7 @@ CREATE TABLE books (
     id SERIAL PRIMARY KEY,
     title TEXT NOT NULL,
     description TEXT NOT NULL,
-    embedding VECTOR(384)
+    embedding VECTOR(738)
 );
 
 CREATE INDEX IF NOT EXISTS idx_books_embedding
