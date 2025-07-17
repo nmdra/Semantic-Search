@@ -1,10 +1,12 @@
 # yaml-language-server: $schema=https://goreleaser.com/static/schema.json
 version: 2
 
+project_name: semantic-search
+
 builds:
   - id: semantic-search-api
-    main: ./cmd/main.go 
-    binary: semantic-search-api              
+    main: ./cmd/main.go
+    binary: semantic-search-api
     env:
       - CGO_ENABLED=0
     goos:
@@ -49,6 +51,7 @@ dockers:
       - "--label=org.opencontainers.image.title={{.ProjectName}}"
       - "--label=org.opencontainers.image.revision={{.FullCommit}}"
       - "--label=org.opencontainers.image.version={{.Version}}"
+
   - use: buildx
     goos: linux
     goarch: arm64
@@ -85,8 +88,8 @@ changelog:
 
 release:
   github:
-    owner: nmdra 
-    name: semantic-search       
+    owner: nmdra
+    name: Semantic-Search
   footer: |
     ---
 
