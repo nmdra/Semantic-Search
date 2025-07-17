@@ -1,0 +1,104 @@
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+version: 2
+
+before:
+  hooks:
+    - go mod tidy
+    - go fmt ./...
+    - go generate ./...
+
+builds:
+  - id: semantic-search-api
+    main: ./cmd/main.go 
+    binary: semantic-search-api              
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w -X main.version={{.Version}}
+    mod_timestamp: "{{ .CommitTimestamp }}"
+
+archives:
+  - id: default
+    formats: ['tar.gz']
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+      {{- if .Arm }}v{{ .Arm }}{{ end }}
+    files:
+      - LICENSE
+      - README.md
+    format_overrides:
+      - goos: windows
+        formats: ['zip']
+
+dockers:
+  - use: buildx
+    goos: linux
+    goarch: amd64
+    image_templates:
+      - "ghcr.io/{{ .Env.REPO_OWNER }}/{{ .ProjectName }}:{{ .Version }}-amd64"
+      - "ghcr.io/{{ .Env.REPO_OWNER }}/{{ .ProjectName }}:latest-amd64"
+    build_flag_templates:
+      - "--pull"
+      - "--platform=linux/amd64"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title={{.ProjectName}}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+  - use: buildx
+    goos: linux
+    goarch: arm64
+    image_templates:
+      - "ghcr.io/{{ .Env.REPO_OWNER }}/{{ .ProjectName }}:{{ .Version }}-arm64"
+      - "ghcr.io/{{ .Env.REPO_OWNER }}/{{ .ProjectName }}:latest-arm64"
+    build_flag_templates:
+      - "--pull"
+      - "--platform=linux/arm64/v8"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title={{.ProjectName}}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+
+docker_manifests:
+  - name_template: "ghcr.io/{{ .Env.REPO_OWNER }}/{{ .ProjectName }}:{{ .Version }}"
+    image_templates:
+      - "ghcr.io/{{ .Env.REPO_OWNER }}/{{ .ProjectName }}:{{ .Version }}-amd64"
+      - "ghcr.io/{{ .Env.REPO_OWNER }}/{{ .ProjectName }}:{{ .Version }}-arm64"
+  - name_template: "ghcr.io/{{ .Env.REPO_OWNER }}/{{ .ProjectName }}:latest"
+    image_templates:
+      - "ghcr.io/{{ .Env.REPO_OWNER }}/{{ .ProjectName }}:latest-amd64"
+      - "ghcr.io/{{ .Env.REPO_OWNER }}/{{ .ProjectName }}:latest-arm64"
+
+checksum:
+  name_template: "checksums.txt"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+
+release:
+  github:
+    owner: nmdra 
+    name: semantic-search       
+  footer: |
+    ---
+
+    Released by [GoReleaser](https://goreleaser.com).
+
+    Built with ❤️ by Nimendra — [blog.nimendra.xyz](https://blog.nimendra.xyz)
+
+snapshot:
+  version_template: "{{ .Tag }}-next"
