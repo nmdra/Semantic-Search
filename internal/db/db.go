@@ -3,22 +3,42 @@ package db
 import (
 	"context"
 	"fmt"
-	"os"
+	"log/slog"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	_ "github.com/joho/godotenv/autoload"
 )
 
-func NewPool(ctx context.Context) (*pgxpool.Pool, error) {
-	dbURL := os.Getenv("DATABASE_URL")
-	if dbURL == "" {
-		return nil, fmt.Errorf("DATABASE_URL is not set")
+func NewPool(ctx context.Context, dsn string, logger *slog.Logger) (*pgxpool.Pool, error) {
+	if dsn == "" {
+		logger.Error("DSN is not set")
+		return nil, fmt.Errorf("DSN is not set")
 	}
 
-	pool, err := pgxpool.New(ctx, dbURL)
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	logger.Info("Parsing database configuration")
+	config, err := pgxpool.ParseConfig(dsn)
 	if err != nil {
-		return nil, fmt.Errorf("failed to connect to DB: %w", err)
+		logger.Error("Failed to parse DSN", "error", err)
+		return nil, fmt.Errorf("failed to parse DSN: %w", err)
 	}
 
+	logger.Info("Creating database connection pool")
+	pool, err := pgxpool.NewWithConfig(ctx, config)
+	if err != nil {
+		logger.Error("Failed to create DB pool", "error", err)
+		return nil, fmt.Errorf("failed to create pool: %w", err)
+	}
+
+	logger.Info("Pinging database to verify connection")
+	if err := pool.Ping(ctx); err != nil {
+		logger.Error("Failed to ping database", "error", err)
+		pool.Close()
+		return nil, fmt.Errorf("failed to ping database: %w", err)
+	}
+
+	logger.Info("Successfully connected to database")
 	return pool, nil
 }
