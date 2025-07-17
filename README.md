@@ -7,6 +7,29 @@
 
 A Golang-based API for semantic search over a book dataset using vector embeddings. Books are embedded using the Gemini API and stored in PostgreSQL with `pgvector`, enabling fast, meaningful similarity search via approximate nearest neighbor indexing (IVFFLAT). Built with Echo, `sqlc`, `go-migrate`, and `pgx`.
 
+```mermaid
+C4Context
+  title System Context Diagram for Book Semantic Search
+  Enterprise_Boundary(b0, "Book Search Platform") {
+    Person(user, "Book Searcher", "User searching for books")
+    System(api, "Semantic Search API", "Go service for searching books via embeddings and semantic queries")
+    SystemDb(db, "PostgreSQL + pgvector", "Stores books and vector embeddings")
+    System_Ext(gemini, "Gemini API", "External API for generating text embeddings")
+
+    Rel(user, api, "Uses", "HTTP\n/Books (POST)\n/Search (GET)")
+    Rel(api, db, "Reads & writes", "pgx (SQL)")
+    Rel(api, gemini, "Requests text embeddings", "Embed API")
+    Rel(gemini, api, "Returns embeddings", "Embedding Response")
+    Rel(db, api, "Returns Books/Search Results")
+  }
+  UpdateRelStyle(user, api, $offsetY="-40", $offsetX="30")
+  UpdateRelStyle(api, db, $offsetY="50", $offsetX="-35")
+  UpdateRelStyle(api, gemini, $offsetY="-30", $offsetX="-40")
+  UpdateRelStyle(gemini, api, $offsetY="0", $offsetX="80")
+  UpdateRelStyle(db, api, $offsetY="40", $offsetX="50")
+  UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="1")
+```
+
 > [!CAUTION]
 > This project is intended for learning and demonstration purposes only.
 > While it tries to follow best and security practices, it may contain errors or incomplete implementations.
