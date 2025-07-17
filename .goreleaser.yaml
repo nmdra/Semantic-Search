@@ -1,12 +1,6 @@
 # yaml-language-server: $schema=https://goreleaser.com/static/schema.json
 version: 2
 
-before:
-  hooks:
-    - go mod tidy
-    - go fmt ./...
-    - go generate ./...
-
 builds:
   - id: semantic-search-api
     main: ./cmd/main.go 
