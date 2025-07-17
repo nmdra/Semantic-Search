@@ -1,4 +1,4 @@
-package internal
+package embed
 
 import (
 	"context"
@@ -10,6 +10,10 @@ import (
 	_ "github.com/joho/godotenv/autoload"
 	"google.golang.org/genai"
 )
+
+type Embedder interface {
+	Embed(ctx context.Context, input string) ([]float32, error)
+}
 
 type GeminiEmbedder struct {
 	client *genai.Client

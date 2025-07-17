@@ -6,32 +6,28 @@ import (
 	"os"
 
 	"semantic-search/api"
-	embed "semantic-search/internal"
+	"semantic-search/internal/db"
+	"semantic-search/internal/embed"
 	"semantic-search/internal/repository"
+	"semantic-search/internal/service"
 
-	"github.com/jackc/pgx/v5/pgxpool"
-	_ "github.com/joho/godotenv/autoload"
 	"github.com/labstack/echo/v4"
 	"github.com/lmittmann/tint"
 )
 
 func main() {
-	logger := (slog.New(tint.NewHandler(os.Stdout, &tint.Options{Level: slog.LevelInfo})))
+	logger := (slog.New(tint.NewHandler(os.Stdout, &tint.Options{
+		Level: slog.LevelInfo,
+	})))
 	ctx := context.Background()
 
-	dbURL := os.Getenv("DATABASE_URL")
-	if dbURL == "" {
-		logger.Error("DATABASE_URL not set")
-		return
-	}
-
-	dbpool, err := pgxpool.New(ctx, dbURL)
+	dbpool, err := db.NewPool(ctx)
 	if err != nil {
 		logger.Error("Failed to connect to DB", "error", err)
-		return
+		os.Exit(1)
 	}
 	defer dbpool.Close()
-	logger.Info("Connected to database")
+	logger.Info("Connected to PostgreSQL")
 
 	embedder, err := embed.NewGeminiEmbedder(ctx, logger)
 	if err != nil {
@@ -40,9 +36,13 @@ func main() {
 	}
 
 	repo := repository.New(dbpool)
-	apiHandler := &api.API{
+	bookService := &service.BookService{
 		Embedder:   embedder,
 		Repository: repo,
+	}
+
+	bookHandler := &api.BookHandler{
+		Service: bookService,
 	}
 
 	e := echo.New()
@@ -52,8 +52,8 @@ func main() {
 		return c.String(200, "pong")
 	})
 
-	e.GET("/search", apiHandler.SearchBookHandler)
-	e.POST("/books", apiHandler.AddBookHandler)
+	e.GET("/search", bookHandler.SearchBooks)
+	e.POST("/books", bookHandler.AddBook)
 
 	e.Logger.Fatal(e.Start(":8080"))
 }
