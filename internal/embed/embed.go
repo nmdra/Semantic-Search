@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"os"
 
 	_ "github.com/joho/godotenv/autoload"
 	"google.golang.org/genai"
@@ -20,9 +19,9 @@ type GeminiEmbedder struct {
 	logger *slog.Logger
 }
 
-func NewGeminiEmbedder(ctx context.Context, logger *slog.Logger) (*GeminiEmbedder, error) {
+func NewGeminiEmbedder(ctx context.Context, logger *slog.Logger, apikey string) (*GeminiEmbedder, error) {
 
-	apiKey := os.Getenv("GEMINI_API_KEY")
+	apiKey := apikey
 	if apiKey == "" {
 		return nil, errors.New("GEMINI_API_KEY is not set")
 	}
