@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"time"
 
 	"semantic-search/api"
 	"semantic-search/internal/db"
@@ -85,6 +86,13 @@ func main() {
 	e := echo.New()
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
+	e.Use(middleware.TimeoutWithConfig(middleware.TimeoutConfig{
+		Timeout: 5 * time.Second,
+		ErrorMessage: "Request timed out.",
+		OnTimeoutRouteErrorHandler: func(err error, c echo.Context) {
+			logger.Warn("Timeout on route", "path", c.Path(), "error", err)
+		},
+	}))
 
 	// Routes
 	e.GET("/ping", func(c echo.Context) error {

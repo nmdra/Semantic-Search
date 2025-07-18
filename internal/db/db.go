@@ -34,7 +34,6 @@ func NewPool(ctx context.Context, dsn string, logger *slog.Logger) (*pgxpool.Poo
 
 	logger.Info("Pinging database to verify connection")
 	if err := pool.Ping(ctx); err != nil {
-		logger.Error("Failed to ping database", "error", err)
 		pool.Close()
 		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}

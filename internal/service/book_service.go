@@ -2,13 +2,11 @@ package service
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log/slog"
 	"math"
 	"semantic-search/internal/embed"
 	"semantic-search/internal/repository"
-	"time"
 
 	"github.com/pgvector/pgvector-go"
 )
@@ -48,28 +46,34 @@ func (s *BookService) AddBook(ctx context.Context, title, desc string) error {
 
 // SearchBooks embeds the query, performs vector search, and ranks by cosine similarity.
 func (s *BookService) SearchBooks(ctx context.Context, query string) ([]BookWithSimilarity, error) {
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+	}
+
 	vector, err := s.Embedder.Embed(ctx, query)
 	if err != nil {
 		s.Logger.Error("Embedding failed", "query", query, "error", err)
 		return nil, fmt.Errorf("embedding failed: %w", err)
 	}
 
-	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
-	defer cancel()
-
 	books, err := s.Repository.SearchBooks(ctx, pgvector.NewVector(vector))
 	if err != nil {
-		if errors.Is(err, context.DeadlineExceeded) {
-			s.Logger.Error("DB search timed out", "query", query)
-		} else {
-			s.Logger.Error("DB search failed", "query", query, "error", err)
-		}
+		s.Logger.Error("DB search failed", "query", query, "error", err)
 		return nil, fmt.Errorf("db search failed: %w", err)
 	}
 
-	// Calculate cosine similarity
+	// Step 3: Post-process (cosine similarity) — respect ctx
 	var results []BookWithSimilarity
 	for _, book := range books {
+		// Stop if request has been canceled
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		default:
+		}
+
 		sim, err := cosineSimilarity(vector, book.Embedding.Slice())
 		if err != nil {
 			s.Logger.Warn("Failed to compute similarity", "bookID", book.ID, "error", err)

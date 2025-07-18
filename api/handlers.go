@@ -31,13 +31,23 @@ func (h *BookHandler) AddBook(c echo.Context) error {
 }
 
 func (h *BookHandler) SearchBooks(c echo.Context) error {
+	ctx := c.Request().Context()
 	query := c.QueryParam("q")
 	if query == "" {
 		return c.JSON(http.StatusBadRequest, echo.Map{"error": "missing query"})
 	}
 
-	results, err := h.Service.SearchBooks(c.Request().Context(), query)
+	select {
+	case <-ctx.Done():
+		return c.JSON(http.StatusRequestTimeout, echo.Map{"error": "request canceled or timed out"})
+	default:
+	}
+
+	results, err := h.Service.SearchBooks(ctx, query)
 	if err != nil {
+		if ctx.Err() != nil {
+			return c.JSON(http.StatusRequestTimeout, echo.Map{"error": "request timed out"})
+		}
 		return c.JSON(http.StatusInternalServerError, echo.Map{"error": err.Error()})
 	}
 
