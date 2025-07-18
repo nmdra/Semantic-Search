@@ -23,7 +23,8 @@ type config struct {
 	port   int
 	apiKey string
 	db     struct {
-		dsn string
+		dsn   string
+		redis string
 	}
 }
 
@@ -32,10 +33,12 @@ func loadConfig() config {
 
 	defaultAPIKey := os.Getenv("GEMINI_API_KEY")
 	defaultDSN := os.Getenv("DATABASE_URL")
+	defaultRedisUrl := os.Getenv("REDIS_URL")
 
 	flag.IntVar(&cfg.port, "port", 8080, "API server port")
 	flag.StringVar(&cfg.apiKey, "apikey", defaultAPIKey, "Gemini API Key")
 	flag.StringVar(&cfg.db.dsn, "db-dsn", defaultDSN, "PostgreSQL DSN")
+	flag.StringVar(&cfg.db.redis, "redis", defaultRedisUrl, "Redis instance URL")
 	flag.Parse()
 
 	return cfg
@@ -64,11 +67,24 @@ func main() {
 	defer dbpool.Close()
 	logger.Info("Connected to PostgreSQL")
 
+	var embedder embed.Embedder
+
 	// Embedding client
-	embedder, err := embed.NewGeminiEmbedder(ctx, logger, cfg.apiKey)
+	baseEmbedder, err := embed.NewGeminiEmbedder(ctx, logger, cfg.apiKey)
 	if err != nil {
 		logger.Error("Failed to initialize embedder", "error", err)
 		os.Exit(1)
+	}
+
+	if cfg.db.redis != "" {
+		redisClient := db.NewRedisClient(cfg.db.redis, logger)
+		embedder = &embed.CachedEmbedder{
+			Base:   baseEmbedder,
+			Redis:  redisClient,
+			Logger: logger,
+		}
+	} else {
+		embedder = baseEmbedder
 	}
 
 	// Services and handlers
@@ -87,7 +103,7 @@ func main() {
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 	e.Use(middleware.TimeoutWithConfig(middleware.TimeoutConfig{
-		Timeout: 5 * time.Second,
+		Timeout:      5 * time.Second,
 		ErrorMessage: "Request timed out.",
 		OnTimeoutRouteErrorHandler: func(err error, c echo.Context) {
 			logger.Warn("Timeout on route", "path", c.Path(), "error", err)
