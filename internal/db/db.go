@@ -36,5 +36,24 @@ func NewPool(ctx context.Context, dsn string, logger *slog.Logger) (*pgxpool.Poo
 	}
 
 	logger.Info("Successfully connected to database")
+
+	// Check if 'books' table exists
+	var exists bool
+	err = pool.QueryRow(ctx, `
+		SELECT EXISTS (
+			SELECT FROM information_schema.tables
+			WHERE table_schema = 'public' AND table_name = 'books'
+		)
+	`).Scan(&exists)
+
+	if err != nil {
+		logger.Error("Failed to check books table existence", "error", err)
+		return nil, fmt.Errorf("failed to check books table: %w", err)
+	}
+
+	if !exists {
+		logger.Warn("'books' table not found. Did you forget to run migrations?")
+	}
+
 	return pool, nil
 }
