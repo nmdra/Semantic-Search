@@ -56,7 +56,7 @@ func loadConfig() config {
 	var cfg config
 
 	flag.Usage = func() {
-		fmt.Fprintf(flag.CommandLine.Output(), `
+		_, _ = fmt.Fprintf(flag.CommandLine.Output(), `
 Semantic Search API Server
 
 Usage:
@@ -88,7 +88,7 @@ func setupLogger() *slog.Logger {
 }
 
 func runMigrations(cfg config, logger *slog.Logger) {
-	if err := db.RunMigrations(cfg.db.dsn); err != nil {
+	if err := db.RunMigrations(cfg.db.dsn, logger); err != nil {
 		logger.Error("Migration failed", "error", err)
 		os.Exit(1)
 	}

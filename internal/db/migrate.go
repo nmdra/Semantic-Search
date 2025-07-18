@@ -3,6 +3,7 @@ package db
 import (
 	"database/sql"
 	"fmt"
+	"log/slog"
 
 	migrations "semantic-search/db"
 
@@ -13,12 +14,17 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
-func RunMigrations(dsn string) error {
+func RunMigrations(dsn string, logger *slog.Logger) error {
 	db, err := sql.Open("pgx", dsn) // use pgx with database/sql
 	if err != nil {
 		return fmt.Errorf("open db: %w", err)
 	}
-	defer db.Close()
+
+	defer func() {
+		if err := db.Close(); err != nil {
+			logger.Error("error closing DB: %v", "error", err)
+		}
+	}()
 
 	driver, err := postgres.WithInstance(db, &postgres.Config{})
 	if err != nil {
