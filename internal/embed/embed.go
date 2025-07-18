@@ -19,9 +19,8 @@ type GeminiEmbedder struct {
 	logger *slog.Logger
 }
 
-func NewGeminiEmbedder(ctx context.Context, logger *slog.Logger, apikey string) (*GeminiEmbedder, error) {
+func NewGeminiEmbedder(ctx context.Context, logger *slog.Logger, apiKey string) (*GeminiEmbedder, error) {
 
-	apiKey := apikey
 	if apiKey == "" {
 		return nil, errors.New("GEMINI_API_KEY is not set")
 	}
