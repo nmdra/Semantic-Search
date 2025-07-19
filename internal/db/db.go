@@ -35,8 +35,6 @@ func NewPool(ctx context.Context, dsn string, logger *slog.Logger) (*pgxpool.Poo
 		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}
 
-	logger.Info("Successfully connected to database")
-
 	// Check if 'books' table exists
 	var exists bool
 	err = pool.QueryRow(ctx, `

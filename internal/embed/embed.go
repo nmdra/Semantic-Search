@@ -62,6 +62,6 @@ func (g *GeminiEmbedder) Embed(ctx context.Context, input string) ([]float32, er
 	}
 
 	embedding := resp.Embeddings[0].Values
-	g.logger.Info("Embedding success", "length", len(embedding))
+	g.logger.Debug("Embedding success", "length", len(embedding))
 	return embedding, nil
 }

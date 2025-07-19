@@ -27,7 +27,7 @@ func (c *CachedEmbedder) Embed(ctx context.Context, input string) ([]float32, er
 	if err == nil {
 		var vec []float32
 		if err := json.Unmarshal(cached, &vec); err == nil {
-			c.Logger.Info("Embedding cache hit", "query", input)
+			c.Logger.Debug("Embedding cache hit", "query", input)
 			return vec, nil
 		}
 		c.Logger.Warn("Failed to unmarshal cached embedding", "error", err)
