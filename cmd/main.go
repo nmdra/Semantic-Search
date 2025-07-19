@@ -5,7 +5,9 @@ import (
 	"flag"
 	"fmt"
 	"log/slog"
+	"net/http"
 	"os"
+	"os/signal"
 	"time"
 
 	"semantic-search/api"
@@ -93,7 +95,31 @@ func main() {
 	e.GET("/search", bookHandler.SearchBooks)
 	e.POST("/books", bookHandler.AddBook)
 
-	e.Logger.Fatal(e.Start(fmt.Sprintf(":%d", cfg.port)))
+	// e.Logger.Fatal(e.Start(fmt.Sprintf(":%d", cfg.port)))
+
+	quitectx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer stop()
+
+	srvAddr := fmt.Sprintf(":%d", cfg.port)
+
+	go func() {
+		if err := e.Start(srvAddr); err != nil && err != http.ErrServerClosed {
+			logger.Error("Unexpected server shutdown", "error", err)
+			os.Exit(1)
+		}
+	}()
+
+	<-quitectx.Done()
+	logger.Debug("Interrupt received")
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	if err := e.Shutdown(shutdownCtx); err != nil {
+		logger.Error("Server didn't shut down gracefully — something's still hanging!", "error", err)
+	} else {
+		logger.Info("Server shut down cleanly. Goodbye!")
+	}
 }
 
 func loadConfig() config {
