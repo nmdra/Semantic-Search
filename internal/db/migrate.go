@@ -22,7 +22,7 @@ func RunMigrations(dsn string, logger *slog.Logger) error {
 
 	defer func() {
 		if err := db.Close(); err != nil {
-			logger.Error("error closing DB: %v", "error", err)
+			logger.Error("error closing DB: %w", "error", err)
 		}
 	}()
 

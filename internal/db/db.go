@@ -11,7 +11,6 @@ import (
 
 func NewPool(ctx context.Context, dsn string, logger *slog.Logger) (*pgxpool.Pool, error) {
 	if dsn == "" {
-		logger.Error("DSN is not set")
 		return nil, fmt.Errorf("DSN is not set")
 	}
 
@@ -20,13 +19,11 @@ func NewPool(ctx context.Context, dsn string, logger *slog.Logger) (*pgxpool.Poo
 
 	config, err := pgxpool.ParseConfig(dsn)
 	if err != nil {
-		logger.Error("Failed to parse DSN", "error", err)
 		return nil, fmt.Errorf("failed to parse DSN: %w", err)
 	}
 
 	pool, err := pgxpool.NewWithConfig(ctx, config)
 	if err != nil {
-		logger.Error("Failed to create DB pool", "error", err)
 		return nil, fmt.Errorf("failed to create pool: %w", err)
 	}
 
@@ -45,7 +42,6 @@ func NewPool(ctx context.Context, dsn string, logger *slog.Logger) (*pgxpool.Poo
 	`).Scan(&exists)
 
 	if err != nil {
-		logger.Error("Failed to check books table existence", "error", err)
 		return nil, fmt.Errorf("failed to check books table: %w", err)
 	}
 

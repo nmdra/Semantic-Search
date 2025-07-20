@@ -17,9 +17,16 @@ type AddBookRequest struct {
 }
 
 func (h *BookHandler) AddBook(c echo.Context) error {
+	ctx := c.Request().Context()
 	var req AddBookRequest
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, echo.Map{"error": "invalid request"})
+	}
+
+	select {
+	case <-ctx.Done():
+		return c.JSON(http.StatusRequestTimeout, echo.Map{"error": "request canceled or timed out"})
+	default:
 	}
 
 	err := h.Service.AddBook(c.Request().Context(), req.Title, req.Description)
@@ -53,5 +60,3 @@ func (h *BookHandler) SearchBooks(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, results)
 }
-
-// TODO: add redis cache

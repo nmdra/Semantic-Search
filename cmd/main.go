@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"log/slog"
@@ -16,7 +17,7 @@ import (
 	"semantic-search/internal/repository"
 	"semantic-search/internal/service"
 
-	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/lmittmann/tint"
@@ -53,11 +54,12 @@ func main() {
 
 	ctx := context.Background()
 
-	dbpool, err := connectToPostgres(ctx, cfg, logger)
+	dbpool, err := db.NewPool(ctx, cfg.db.dsn, logger)
 	if err != nil {
 		logger.Error("Database connection failed", "error", err)
 		os.Exit(1)
 	}
+	logger.Info("Connected to PostgreSQL")
 	defer dbpool.Close()
 
 	embedder, err := newEmbedder(ctx, cfg, logger)
@@ -186,20 +188,23 @@ func setupLogger(levelStr string) *slog.Logger {
 }
 
 func runMigrations(cfg config, logger *slog.Logger) error {
-	if err := db.RunMigrations(cfg.db.dsn, logger); err != nil {
-		return err
+	err := db.RunMigrations(cfg.db.dsn, logger)
+	if err == nil {
+		logger.Info("Migrations applied successfully")
+		return nil
 	}
-	logger.Info("Migrations applied successfully")
-	return nil
-}
 
-func connectToPostgres(ctx context.Context, cfg config, logger *slog.Logger) (*pgxpool.Pool, error) {
-	dbpool, err := db.NewPool(ctx, cfg.db.dsn, logger)
-	if err != nil {
-		return nil, err
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) {
+		logger.Error("Postgres error during migration",
+			"code", pgErr.Code,
+			"message", pgErr.Message,
+			"detail", pgErr.Detail,
+			"where", pgErr.Where,
+		)
 	}
-	logger.Info("Connected to PostgreSQL")
-	return dbpool, nil
+
+	return fmt.Errorf("failed to run migrations: %w", err)
 }
 
 func newEmbedder(ctx context.Context, cfg config, logger *slog.Logger) (embed.Embedder, error) {
