@@ -58,9 +58,23 @@ C4Context
 
 ### API Endpoints
 
-* `POST /books` — Add a book with title and description; stores embedding in DB
-* `GET /search?q=your+query` — Search books semantically by query text
-* `GET /ping` — Health check endpoint
+* **`POST /books`**
+  Add a new book by providing its title and description. The service generates and stores a semantic embedding of the description in the database.
+
+* **`GET /search?q=your+query`**
+  Perform a semantic search on the stored books using the query text. Returns a list of matching books ranked by relevance.
+
+* **`GET /ping`**
+  Simple health check endpoint to verify if the service is running.
+
+#### Example Usage
+
+Search for books related to *Science fiction that describe Social Hierarchy*:
+
+```bash
+curl -sG "http://localhost:8080/search" --data-urlencode "q=Science fiction that describe Social Hierarchy" | jq
+```
+<img width="1331" height="705" alt="image" src="https://github.com/user-attachments/assets/d11a4a23-1260-4809-8416-bcf2986f5154" />
 
 ### Setup PostgreSQL
 
