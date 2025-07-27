@@ -4,6 +4,8 @@ on:
     branches:
       - main
       - master
+    paths:
+      - '**.go'
   pull_request:
   workflow_dispatch:
 
