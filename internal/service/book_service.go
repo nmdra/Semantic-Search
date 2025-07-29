@@ -8,6 +8,7 @@ import (
 	"semantic-search/internal/embed"
 	"semantic-search/internal/repository"
 
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/pgvector/pgvector-go"
 )
 
@@ -19,25 +20,27 @@ type BookService struct {
 
 type BookWithSimilarity struct {
 	ID          int32
+	ISBN        string
 	Title       string
 	Description string
 	Similarity  float64
 }
 
 // AddBook embeds the book description and stores it in the database.
-func (s *BookService) AddBook(ctx context.Context, title, desc string) error {
+func (s *BookService) AddBook(ctx context.Context, isbn, title, desc string) error {
 	vector, err := s.Embedder.Embed(ctx, desc)
 	if err != nil {
 		return fmt.Errorf("embedding failed: %w", err)
 	}
 
 	err = s.Repository.InsertBook(ctx, repository.InsertBookParams{
+		Isbn:        pgtype.Text{String: isbn, Valid: true},
 		Title:       title,
 		Description: desc,
 		Embedding:   pgvector.NewVector(vector),
 	})
 	if err != nil {
-		s.Logger.Error("Failed to insert book", "title", title, "error", err)
+		s.Logger.Error("Failed to insert book", "isbn", isbn, "title", title, "error", err)
 		return fmt.Errorf("failed to insert book: %w", err)
 	}
 
@@ -64,10 +67,8 @@ func (s *BookService) SearchBooks(ctx context.Context, query string) ([]BookWith
 		return nil, fmt.Errorf("db search failed: %w", err)
 	}
 
-	// Step 3: Post-process (cosine similarity) — respect ctx
 	var results []BookWithSimilarity
 	for _, book := range books {
-		// Stop if request has been canceled
 		select {
 		case <-ctx.Done():
 			return nil, ctx.Err()
@@ -82,6 +83,7 @@ func (s *BookService) SearchBooks(ctx context.Context, query string) ([]BookWith
 
 		results = append(results, BookWithSimilarity{
 			ID:          book.ID,
+			ISBN:        book.Isbn.String,
 			Title:       book.Title,
 			Description: book.Description,
 			Similarity:  sim,

@@ -8,43 +8,59 @@ package repository
 import (
 	"context"
 
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/pgvector/pgvector-go"
 )
 
 const insertBook = `-- name: InsertBook :exec
-INSERT INTO books (title, description, embedding)
-VALUES ($1, $2, $3)
+INSERT INTO books (isbn, title, description, embedding)
+VALUES ($1, $2, $3, $4)
 `
 
 type InsertBookParams struct {
+	Isbn        pgtype.Text
 	Title       string
 	Description string
 	Embedding   pgvector.Vector
 }
 
 func (q *Queries) InsertBook(ctx context.Context, arg InsertBookParams) error {
-	_, err := q.db.Exec(ctx, insertBook, arg.Title, arg.Description, arg.Embedding)
+	_, err := q.db.Exec(ctx, insertBook,
+		arg.Isbn,
+		arg.Title,
+		arg.Description,
+		arg.Embedding,
+	)
 	return err
 }
 
 const searchBooks = `-- name: SearchBooks :many
-SELECT id, title, description, embedding
+SELECT id, isbn, title, description, embedding
 FROM books
 ORDER BY embedding <=> $1
 LIMIT 5
 `
 
-func (q *Queries) SearchBooks(ctx context.Context, embedding pgvector.Vector) ([]Book, error) {
+type SearchBooksRow struct {
+	ID          int32
+	Isbn        pgtype.Text
+	Title       string
+	Description string
+	Embedding   pgvector.Vector
+}
+
+func (q *Queries) SearchBooks(ctx context.Context, embedding pgvector.Vector) ([]SearchBooksRow, error) {
 	rows, err := q.db.Query(ctx, searchBooks, embedding)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Book
+	var items []SearchBooksRow
 	for rows.Next() {
-		var i Book
+		var i SearchBooksRow
 		if err := rows.Scan(
 			&i.ID,
+			&i.Isbn,
 			&i.Title,
 			&i.Description,
 			&i.Embedding,

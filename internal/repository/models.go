@@ -5,6 +5,7 @@
 package repository
 
 import (
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/pgvector/pgvector-go"
 )
 
@@ -13,4 +14,5 @@ type Book struct {
 	Title       string
 	Description string
 	Embedding   pgvector.Vector
+	Isbn        pgtype.Text
 }

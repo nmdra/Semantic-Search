@@ -14,6 +14,7 @@ type BookHandler struct {
 type AddBookRequest struct {
 	Title       string `json:"title"`
 	Description string `json:"description"`
+	Isbn        string `json:"isbn"`
 }
 
 func (h *BookHandler) AddBook(c echo.Context) error {
@@ -29,7 +30,7 @@ func (h *BookHandler) AddBook(c echo.Context) error {
 	default:
 	}
 
-	err := h.Service.AddBook(c.Request().Context(), req.Title, req.Description)
+	err := h.Service.AddBook(c.Request().Context(), req.Isbn, req.Title, req.Description)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, echo.Map{"error": err.Error()})
 	}
