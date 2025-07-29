@@ -7,3 +7,8 @@ SELECT id, isbn, title, description, embedding
 FROM books
 ORDER BY embedding <=> $1
 LIMIT 5;
+
+-- name: GetBookByISBN :one
+SELECT id, isbn
+FROM books
+WHERE isbn = $1;

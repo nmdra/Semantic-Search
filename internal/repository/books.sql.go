@@ -12,6 +12,24 @@ import (
 	"github.com/pgvector/pgvector-go"
 )
 
+const getBookByISBN = `-- name: GetBookByISBN :one
+SELECT id, isbn
+FROM books
+WHERE isbn = $1
+`
+
+type GetBookByISBNRow struct {
+	ID   int32
+	Isbn pgtype.Text
+}
+
+func (q *Queries) GetBookByISBN(ctx context.Context, isbn pgtype.Text) (GetBookByISBNRow, error) {
+	row := q.db.QueryRow(ctx, getBookByISBN, isbn)
+	var i GetBookByISBNRow
+	err := row.Scan(&i.ID, &i.Isbn)
+	return i, err
+}
+
 const insertBook = `-- name: InsertBook :exec
 INSERT INTO books (isbn, title, description, embedding)
 VALUES ($1, $2, $3, $4)
