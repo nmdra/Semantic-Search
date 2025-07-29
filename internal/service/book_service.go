@@ -2,12 +2,14 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"math"
 	"semantic-search/internal/embed"
 	"semantic-search/internal/repository"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/pgvector/pgvector-go"
 )
@@ -28,6 +30,16 @@ type BookWithSimilarity struct {
 
 // AddBook embeds the book description and stores it in the database.
 func (s *BookService) AddBook(ctx context.Context, isbn, title, desc string) error {
+
+	// Check Book already exists
+	_, err := s.Repository.GetBookByISBN(ctx, pgtype.Text{String: isbn, Valid: true})
+	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+		return fmt.Errorf("failed to check existing ISBN: %w", err)
+	}
+	if err == nil {
+		return fmt.Errorf("book with isbn %s already exists", isbn)
+	}
+
 	vector, err := s.Embedder.Embed(ctx, desc)
 	if err != nil {
 		return fmt.Errorf("embedding failed: %w", err)
