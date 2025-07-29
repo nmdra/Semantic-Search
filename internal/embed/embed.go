@@ -7,6 +7,7 @@ import (
 	"log/slog"
 
 	_ "github.com/joho/godotenv/autoload"
+	"golang.org/x/time/rate"
 	"google.golang.org/genai"
 )
 
@@ -15,8 +16,9 @@ type Embedder interface {
 }
 
 type GeminiEmbedder struct {
-	client *genai.Client
-	logger *slog.Logger
+	client  *genai.Client
+	logger  *slog.Logger
+	limiter *rate.Limiter
 }
 
 func NewGeminiEmbedder(ctx context.Context, logger *slog.Logger, apiKey string) (*GeminiEmbedder, error) {
@@ -35,13 +37,20 @@ func NewGeminiEmbedder(ctx context.Context, logger *slog.Logger, apiKey string) 
 	}
 
 	return &GeminiEmbedder{
-		client: client,
-		logger: logger,
+		client:  client,
+		logger:  logger,
+		limiter: rate.NewLimiter(rate.Limit(5), 2), // 5 requests/sec, with up to 2 sent instantly in a burst
 	}, nil
 }
 
 func (g *GeminiEmbedder) Embed(ctx context.Context, input string) ([]float32, error) {
 	dim := int32(768)
+
+	if err := g.limiter.Wait(ctx); err != nil {
+		g.logger.Warn("rate limiter blocked request", "error", err)
+		return nil, fmt.Errorf("rate limit exceeded: %w", err)
+	}
+
 	contents := []*genai.Content{
 		genai.NewContentFromText(input, genai.RoleUser),
 	}
