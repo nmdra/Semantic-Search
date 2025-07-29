@@ -21,6 +21,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/lmittmann/tint"
+	"golang.org/x/time/rate"
 )
 
 type config struct {
@@ -83,6 +84,9 @@ func main() {
 
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
+	e.Use(middleware.RateLimiter(
+		middleware.NewRateLimiterMemoryStore(rate.Limit(20)),
+	))
 	e.Use(middleware.TimeoutWithConfig(middleware.TimeoutConfig{
 		Timeout:      5 * time.Second,
 		ErrorMessage: "Request timed out.",
