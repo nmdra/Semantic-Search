@@ -1,31 +1,40 @@
 DB_URL=postgres://postgres:postgres@localhost:5432/books?sslmode=disable
 MIGRATIONS_DIR=./db/migrations
 
-migrate-up:
+.PHONY: help migrate-up migrate-down migrate-force sqlc-gen psql up down build clean
+
+help: ## Prints all targets
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
+
+migrate-up: ## Migrate up database
 	migrate -database "$(DB_URL)" -path $(MIGRATIONS_DIR) up
 
-migrate-down:
+migrate-down: ## Migrate down database
 	migrate -database "$(DB_URL)" -path $(MIGRATIONS_DIR) down
 
-migrate-force:
+migrate-force: ## Force migrate database to version 1
 	migrate -database "$(DB_URL)" -path $(MIGRATIONS_DIR) force 1
 
-sqlc-gen:
+sqlc-gen: ## Generate Go code from SQL using sqlc
 	sqlc generate
 
-psql:
+psql: ## Open interactive psql session
 	psql $(DB_URL)
 
-drop-db:
-	dropdb --if-exists -U postgres books
-
-up:
+up: ## Start services via docker-compose
 	docker-compose up -d
 
-down:
+down: ## Stop services via docker-compose
 	docker-compose down
 
-seed:
-	psql $(DB_URL) -f db/seed.sql
+build: ## Compile the Go application
+	go build -o bin/semantic-search ./cmd/main.go
 
-.PHONY: migrate-up migrate-down migrate-new migrate-force sqlc-gen create-db drop-db psql up down logs
+clean: ## Clean build files (asks for confirmation)
+	@read -p "Are you sure you want to delete ./bin? [y/N] " confirm; \
+	if [ "$$confirm" = "y" ] || [ "$$confirm" = "Y" ]; then \
+		echo "Cleaning..."; \
+		rm -rf bin/; \
+	else \
+		echo "Aborted."; \
+	fi
