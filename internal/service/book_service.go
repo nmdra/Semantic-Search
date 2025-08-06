@@ -124,3 +124,23 @@ func cosineSimilarity(a, b []float32) (float64, error) {
 
 	return dot / (math.Sqrt(normA) * math.Sqrt(normB)), nil
 }
+
+func (s *BookService) FullTextSearch(ctx context.Context, query string) ([]repository.SearchBooksByTextRow, error) {
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+	}
+
+	if query == "" {
+		return nil, fmt.Errorf("search query cannot be empty")
+	}
+
+	books, err := s.Repository.SearchBooksByText(ctx, query)
+	if err != nil {
+		s.Logger.Error("Full-text search failed", "query", query, "error", err)
+		return nil, fmt.Errorf("full-text search failed: %w", err)
+	}
+
+	return books, nil
+}

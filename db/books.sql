@@ -12,3 +12,10 @@ LIMIT 5;
 SELECT id, isbn
 FROM books
 WHERE isbn = $1;
+
+-- name: SearchBooksByText :many
+SELECT id, isbn, title, description
+FROM books
+WHERE tsv @@ plainto_tsquery('english', $1)
+ORDER BY ts_rank(tsv, plainto_tsquery('english', $1)) DESC
+LIMIT 10;

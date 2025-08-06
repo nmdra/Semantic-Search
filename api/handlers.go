@@ -17,6 +17,7 @@ type AddBookRequest struct {
 	Isbn        string `json:"isbn"`
 }
 
+// POST /books
 func (h *BookHandler) AddBook(c echo.Context) error {
 	ctx := c.Request().Context()
 	var req AddBookRequest
@@ -30,7 +31,7 @@ func (h *BookHandler) AddBook(c echo.Context) error {
 	default:
 	}
 
-	err := h.Service.AddBook(c.Request().Context(), req.Isbn, req.Title, req.Description)
+	err := h.Service.AddBook(ctx, req.Isbn, req.Title, req.Description)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, echo.Map{"error": err.Error()})
 	}
@@ -38,6 +39,7 @@ func (h *BookHandler) AddBook(c echo.Context) error {
 	return c.JSON(http.StatusCreated, echo.Map{"status": "book added"})
 }
 
+// GET /search/vector?q=
 func (h *BookHandler) SearchBooks(c echo.Context) error {
 	ctx := c.Request().Context()
 	query := c.QueryParam("q")
@@ -52,6 +54,31 @@ func (h *BookHandler) SearchBooks(c echo.Context) error {
 	}
 
 	results, err := h.Service.SearchBooks(ctx, query)
+	if err != nil {
+		if ctx.Err() != nil {
+			return c.JSON(http.StatusRequestTimeout, echo.Map{"error": "request timed out"})
+		}
+		return c.JSON(http.StatusInternalServerError, echo.Map{"error": err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, results)
+}
+
+// GET /search/text?q=
+func (h *BookHandler) FullTextSearch(c echo.Context) error {
+	ctx := c.Request().Context()
+	query := c.QueryParam("q")
+	if query == "" {
+		return c.JSON(http.StatusBadRequest, echo.Map{"error": "missing query"})
+	}
+
+	select {
+	case <-ctx.Done():
+		return c.JSON(http.StatusRequestTimeout, echo.Map{"error": "request canceled or timed out"})
+	default:
+	}
+
+	results, err := h.Service.FullTextSearch(ctx, query)
 	if err != nil {
 		if ctx.Err() != nil {
 			return c.JSON(http.StatusRequestTimeout, echo.Map{"error": "request timed out"})

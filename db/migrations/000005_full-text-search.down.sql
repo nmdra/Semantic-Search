@@ -1,0 +1,4 @@
+DROP INDEX IF EXISTS idx_books_tsv;
+
+ALTER TABLE books
+DROP COLUMN IF EXISTS tsv;
