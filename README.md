@@ -58,14 +58,24 @@ C4Context
 
 ### API Endpoints
 
-* **`POST /books`**
-  Add a new book by providing its title and description. The service generates and stores a semantic embedding of the description in the database.
+#### `POST /books`
 
-* **`GET /search?q=your+query`**
-  Perform a semantic search on the stored books using the query text. Returns a list of matching books ranked by relevance.
+Add a new book by providing its title, description, and ISBN.
+The service generates and stores a **semantic embedding** and full-text index.
 
-* **`GET /ping`**
-  Simple health check endpoint to verify if the service is running.
+#### `GET /search/vector?q=your+query`
+
+Perform a **semantic search** on stored books using vector similarity with the query.
+Returns books ranked by **cosine similarity** of embeddings.
+
+#### `GET /search/text?q=your+query`
+
+Perform a **full-text search** using PostgreSQL’s full-text index on title and description.
+Returns books ranked by **textual relevance (ts\_rank)**.
+
+#### `GET /ping`
+
+Health check endpoint to verify if the service is running.
 
 #### Example Usage
 
