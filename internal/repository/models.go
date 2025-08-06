@@ -15,4 +15,5 @@ type Book struct {
 	Description string
 	Embedding   pgvector.Vector
 	Isbn        pgtype.Text
+	Tsv         interface{}
 }

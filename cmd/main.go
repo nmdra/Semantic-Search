@@ -98,7 +98,8 @@ func main() {
 	e.GET("/ping", func(c echo.Context) error {
 		return c.String(200, "pong")
 	})
-	e.GET("/search", bookHandler.SearchBooks)
+	e.GET("/search/semantic", bookHandler.SearchBooks)
+	e.GET("/search/text", bookHandler.FullTextSearch)
 	e.POST("/books", bookHandler.AddBook)
 
 	// e.Logger.Fatal(e.Start(fmt.Sprintf(":%d", cfg.port)))

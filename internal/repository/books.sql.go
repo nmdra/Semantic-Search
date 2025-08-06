@@ -92,3 +92,43 @@ func (q *Queries) SearchBooks(ctx context.Context, embedding pgvector.Vector) ([
 	}
 	return items, nil
 }
+
+const searchBooksByText = `-- name: SearchBooksByText :many
+SELECT id, isbn, title, description
+FROM books
+WHERE tsv @@ plainto_tsquery('english', $1)
+ORDER BY ts_rank(tsv, plainto_tsquery('english', $1)) DESC
+LIMIT 10
+`
+
+type SearchBooksByTextRow struct {
+	ID          int32
+	Isbn        pgtype.Text
+	Title       string
+	Description string
+}
+
+func (q *Queries) SearchBooksByText(ctx context.Context, plaintoTsquery string) ([]SearchBooksByTextRow, error) {
+	rows, err := q.db.Query(ctx, searchBooksByText, plaintoTsquery)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []SearchBooksByTextRow
+	for rows.Next() {
+		var i SearchBooksByTextRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Isbn,
+			&i.Title,
+			&i.Description,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
