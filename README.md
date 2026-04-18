@@ -2,7 +2,7 @@
 
 [![Release with GoReleaser](https://github.com/nmdra/Semantic-Search/actions/workflows/release.yaml/badge.svg)](https://github.com/nmdra/Semantic-Search/actions/workflows/release.yaml)
 [![golangci-lint](https://github.com/nmdra/Semantic-Search/actions/workflows/golangci-lint.yaml/badge.svg)](https://github.com/nmdra/Semantic-Search/actions/workflows/golangci-lint.yaml)
-[![Go Version](https://img.shields.io/badge/go-1.24-blue.svg)](https://golang.org/dl/)
+[![Go Version](https://img.shields.io/badge/go-1.25-blue.svg)](https://golang.org/dl/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Docker Image](https://img.shields.io/badge/docker-ghcr.io%2Fnmdra%2Fsemantic--search-blue?logo=docker)](https://ghcr.io/nmdra/semantic-search)
 
@@ -50,7 +50,7 @@ C4Context
 
 ### Prerequisites
 
-* Go 1.24+
+* Go 1.25+
 * PostgreSQL with `pgvector` extension installed
 * Gemini API Key ([Get API Key Here](https://aistudio.google.com/app/apikey))
 * Redis (for vector caching)
