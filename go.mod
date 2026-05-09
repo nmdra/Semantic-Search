@@ -1,4 +1,4 @@
-module semantic-search
+module github.com/nmdra/Semantic-Search
 
 go 1.25.0
 

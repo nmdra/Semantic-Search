@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 
-	migrations "semantic-search/db"
+	migrations "github.com/nmdra/Semantic-Search/db"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
