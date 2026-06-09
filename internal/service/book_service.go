@@ -4,10 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/nmdra/Semantic-Search/internal/embed"
+	"github.com/nmdra/Semantic-Search/internal/repository"
 	"log/slog"
 	"math"
-	"semantic-search/internal/embed"
-	"semantic-search/internal/repository"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"

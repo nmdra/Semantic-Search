@@ -1,8 +1,8 @@
 package api
 
 import (
+	"github.com/nmdra/Semantic-Search/internal/service"
 	"net/http"
-	"semantic-search/internal/service"
 
 	"github.com/labstack/echo/v4"
 )

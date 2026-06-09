@@ -11,11 +11,11 @@ import (
 	"os/signal"
 	"time"
 
-	"semantic-search/api"
-	"semantic-search/internal/db"
-	"semantic-search/internal/embed"
-	"semantic-search/internal/repository"
-	"semantic-search/internal/service"
+	"github.com/nmdra/Semantic-Search/api"
+	"github.com/nmdra/Semantic-Search/internal/db"
+	"github.com/nmdra/Semantic-Search/internal/embed"
+	"github.com/nmdra/Semantic-Search/internal/repository"
+	"github.com/nmdra/Semantic-Search/internal/service"
 
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/labstack/echo/v4"
