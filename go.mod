@@ -7,7 +7,7 @@ require (
 	github.com/golang-migrate/migrate/v4 v4.19.1
 	github.com/jackc/pgx/v5 v5.10.0
 	github.com/joho/godotenv v1.5.1
-	github.com/labstack/echo/v4 v4.15.2
+	github.com/labstack/echo/v4 v4.15.3
 	github.com/lmittmann/tint v1.1.3
 	github.com/pgvector/pgvector-go v0.4.0
 	github.com/redis/go-redis/v9 v9.20.0
